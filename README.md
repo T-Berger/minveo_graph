@@ -23,5 +23,6 @@ Um die benötigten Daten zu erhalten müssen wir ein package installieren:
 oder
 
 - $ git clone https://github.com/femtotrader/python-eodhistoricaldata.git
+
 - $ python setup.py install
 
