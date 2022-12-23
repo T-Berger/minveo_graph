@@ -19,21 +19,17 @@ df_teplx = get_eod_data("TEPLX", "US", first_day, today, api_key=API_KEY).reset_
 df = pd.read_csv("Macromedia_example.csv", sep=';', parse_dates=['Date'], date_parser=dateparse)
 df = df.loc[(df["Date"] >= "30/06/17") & (df["Date"] <= "30/09/22")]
 
-df['Cash'] = df['Cash'].str.replace(',', '.')
-df['Cash'] = df['Cash'].str.replace('€', '')
-df['Cash'] = pd.to_numeric(df['Cash'])
+df_columns = ['Cash', 'Defensiv', 'Offensiv', 'Ausgewogen']
 
-df['Defensiv'] = df['Defensiv'].str.replace(',', '.')
-df['Defensiv'] = df['Defensiv'].str.replace('€', '')
-df['Defensiv'] = pd.to_numeric(df['Defensiv'])
+def convert(df, columns):
 
-df['Offensiv'] = df['Offensiv'].str.replace(',', '.')
-df['Offensiv'] = df['Offensiv'].str.replace('€', '')
-df['Offensiv'] = pd.to_numeric(df['Offensiv'])
+    for column in columns:
+        df[column] = df[column].str.replace(',','.')
+        df[column] = df[column].str.replace('€','')
+        df[column] = pd.to_numeric(df[column])
+        #print(column)
 
-df['Ausgewogen'] = df['Ausgewogen'].str.replace(',', '.')
-df['Ausgewogen'] = df['Ausgewogen'].str.replace('€', '')
-df['Ausgewogen'] = pd.to_numeric(df['Ausgewogen'])
+convert(df, df_columns)
 
 df['LU0323577840.EUFUND'] = df_lu['Adjusted_close']
 df['GDAXI.INDX'] = df_dax['Adjusted_close']
@@ -76,16 +72,17 @@ app.layout = html.Div([
 def update_graph(slider_value, btn_log, btn_lin):
     fig = px.line(df, x='Date', y=df.columns, hover_data={'Date': '|%d/%m/%y'})
 
-    fig.update_xaxes(ticks="outside", ticklabelmode="period",
-                     rangeslider_visible=True,
-                     rangeselector=dict(
-                         buttons=list([
-                             dict(count=1, label="1m", step="month", stepmode="backward"),
-                             dict(count=6, label="6m", step="month", stepmode="backward"),
-                             dict(count=1, label="YTD", step="year", stepmode="todate"),
-                             dict(count=1, label="1y", step="year", stepmode="backward"),
-                             dict(step="all")
-                         ])))
+    fig.update_layout(xaxis=dict(ticks="outside",
+                    ticklabelmode="period",
+                    rangeselector=dict(
+                        buttons=list([
+                            dict(count=1, label="1m", step="month", stepmode="backward"),
+                            dict(count=6, label="6m", step="month", stepmode="backward"),
+                            dict(count=1, label="YTD", step="year", stepmode="todate"),
+                            dict(count=1, label="1y", step="year", stepmode="backward"),
+                            dict(step="all")])),
+                            rangeslider=dict(visible=True)))
+
 
     if 'log' == ctx.triggered_id:
         fig.update_yaxes(type="log")
