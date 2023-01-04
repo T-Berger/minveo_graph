@@ -32,7 +32,6 @@ standardise_benchmark(df_teplx['Adjusted_close'])
 
 
 def convert(df_input, columns):
-
     for column in columns:
         df_input[column] = pd.to_numeric(df[column].str.replace(',', '.').str.replace('€', ''))
 
@@ -52,19 +51,21 @@ df['GDAXI.INDX'] = df_dax['Adjusted_close']
 df['STOXX50E.INDX'] = df_stox['Adjusted_close']
 df['TEPLX.US'] = df_teplx['Adjusted_close']
 
-
-
 app = Dash(__name__)
 app.layout = html.Div([
     html.H1('Stock price analysis', style={'textAlign': 'center'}),
-
-    html.Button('Logarithmisch', id='log', n_clicks=0),
-    html.Button('Linear', id='lin', n_clicks=0),
-
-    html.Button('Offensiv', id='off_btn', n_clicks=0),
-    html.Button('Ausgewogen', id='asgw_btn', n_clicks=0),
-    html.Button('Defensiv', id='def_btn', n_clicks=0),
-
+    html.Div(children=[
+        html.Button('Logarithmisch', id='log', n_clicks=0),
+        html.Button('Linear', id='lin', n_clicks=0),
+    ]
+    ),
+    html.Div(children=[
+        html.Label('Inflation'),
+        html.Br(),
+        html.Button('On', id='infl_on', n_clicks=0),
+        html.Button('Off', id='infl_off', n_clicks=0),
+    ]
+    ),
     dcc.Graph(id='mygraph')
 ])
 
@@ -73,13 +74,11 @@ app.layout = html.Div([
     Output('mygraph', 'figure'),
     Input('log', 'n_clicks'),
     Input('lin', 'n_clicks'),
-    Input('off_btn', 'n_clicks'),
-    Input('asgw_btn', 'n_clicks'),
-    Input('def_btn', 'n_clicks'),
-
+    Input('infl_on', 'n_clicks'),
+    Input('infl_off', 'n_clicks'),
 )
-def update_graph(btn_log, btn_lin, off_btn, asgw_btn, def_btn):
-    exclude_columns = []
+def update_graph(btn_log, btn_lin, btn_infl_on, btn_infl_off):
+    fig = go.Figure()
 
     # if 'off_btn' == ctx.triggered_id:
     #     if off_btn % 2 != 0:
@@ -108,6 +107,12 @@ def update_graph(btn_log, btn_lin, off_btn, asgw_btn, def_btn):
 
     elif 'lin' == ctx.triggered_id:
         fig.update_yaxes(type="linear")
+
+    if 'infl_on' == ctx.triggered_id:
+        fig.update_layout()
+
+    elif 'infl_off' == ctx.triggered_id:
+        fig.update_layout()
 
     return fig
 
