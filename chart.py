@@ -16,8 +16,18 @@ df_dax = get_eod_data("GDAXI", "INDX", first_day, today, api_key=API_KEY).reset_
 df_stox = get_eod_data("STOXX50E", "INDX", first_day, today, api_key=API_KEY).reset_index()
 df_teplx = get_eod_data("TEPLX", "US", first_day, today, api_key=API_KEY).reset_index()
 
-df = pd.read_csv("Macromedia_example.csv", sep=';', parse_dates=['Date'], date_parser=dateparse)
-df = df.loc[(df["Date"] >= "30/06/17") & (df["Date"] <= "30/09/22")]
+
+def standardise_benchmark(row):
+    first_entry = row[0]
+
+    for i, value in enumerate(row):
+        row[i] = pd.to_numeric(math.ceil(value / (first_entry / 100) * 100) / 100)
+
+
+standardise_benchmark(df_lu['Adjusted_close'])
+standardise_benchmark(df_dax['Adjusted_close'])
+standardise_benchmark(df_stox['Adjusted_close'])
+standardise_benchmark(df_teplx['Adjusted_close'])
 
 df['Cash'] = df['Cash'].str.replace(',', '.')
 df['Cash'] = df['Cash'].str.replace('€', '')
