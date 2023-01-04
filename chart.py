@@ -56,7 +56,9 @@ app.layout = html.Div([
     html.Button('Logarithmisch', id='log', n_clicks=0),
     html.Button('Linear', id='lin', n_clicks=0),
 
-    dcc.Graph(id='mygraph'),
+    html.Button('Offensiv', id='off_btn', n_clicks=0),
+    html.Button('Ausgewogen', id='asgw_btn', n_clicks=0),
+    html.Button('Defensiv', id='def_btn', n_clicks=0),
 
     dcc.Graph(id='mygraph')
 ])
@@ -65,10 +67,29 @@ app.layout = html.Div([
 @app.callback(
     Output('mygraph', 'figure'),
     Input('log', 'n_clicks'),
-    Input('lin', 'n_clicks')
+    Input('lin', 'n_clicks'),
+    Input('off_btn', 'n_clicks'),
+    Input('asgw_btn', 'n_clicks'),
+    Input('def_btn', 'n_clicks'),
+
 )
-def update_graph(slider_value, btn_log, btn_lin):
-    fig = px.line(df, x='Date', y=df.columns, hover_data={'Date': '|%d/%m/%y'})
+def update_graph(btn_log, btn_lin, off_btn, asgw_btn, def_btn):
+    exclude_columns = []
+
+    # if 'off_btn' == ctx.triggered_id:
+    #     if off_btn % 2 != 0:
+    #         exclude_columns.append('Ausgewogen')
+    #         exclude_columns.append('Defensiv')
+    #
+    # elif 'asgw_btn' == ctx.triggered_id:
+    #     if asgw_btn % 2 != 0:
+    #         exclude_columns.append('Offensiv')
+    #         exclude_columns.append('Defensiv')
+    #
+    # elif 'def_btn' == ctx.triggered_id:
+    #     if def_btn % 2 != 0:
+    #         exclude_columns.append('Offensiv')
+    #         exclude_columns.append('Ausgewogen')
 
     fig = px.line(df, x='Date',
                   y=df.columns
