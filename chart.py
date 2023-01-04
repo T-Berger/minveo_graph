@@ -1,7 +1,7 @@
 import math
 from datetime import datetime
 import pandas as pd
-import plotly.express as px
+import plotly.graph_objects as go
 from dash import Dash, dcc, html, Input, Output, ctx
 from decouple import config
 
@@ -80,27 +80,27 @@ app.layout = html.Div([
 def update_graph(btn_log, btn_lin, btn_infl_on, btn_infl_off):
     fig = go.Figure()
 
-    # if 'off_btn' == ctx.triggered_id:
-    #     if off_btn % 2 != 0:
-    #         exclude_columns.append('Ausgewogen')
-    #         exclude_columns.append('Defensiv')
-    #
-    # elif 'asgw_btn' == ctx.triggered_id:
-    #     if asgw_btn % 2 != 0:
-    #         exclude_columns.append('Offensiv')
-    #         exclude_columns.append('Defensiv')
-    #
-    # elif 'def_btn' == ctx.triggered_id:
-    #     if def_btn % 2 != 0:
-    #         exclude_columns.append('Offensiv')
-    #         exclude_columns.append('Ausgewogen')
+    for column in ['Cash', 'Defensiv', 'Ausgewogen', 'Offensiv']:
+        fig.add_trace(go.Scatter(
+            x=df['Date'],
+            y=df[column],
+            legendgroup="strategie_group",
+            legendgrouptitle_text="Minveo Strategie",
+            name=column,
+            mode="lines",
+        ))
 
-    fig = px.line(df, x='Date',
-                  y=df.columns
-                  , hover_data={'Date': '|%d/%m/%y'})
+    for column in ['LU0323577840.EUFUND', 'GDAXI.INDX', 'STOXX50E.INDX', 'TEPLX.US']:
+        fig.add_trace(go.Scatter(
+            x=df['Date'],
+            y=df[column],
+            legendgroup="benchmark_group",
+            legendgrouptitle_text="Benchmark",
+            name=column,
+            mode="lines",
+        ))
 
-    fig.update_xaxes(ticks="outside", rangeslider_visible=True, )
-    fig.update_layout(showlegend=True, )
+    fig.update_layout(showlegend=True, legend=dict(groupclick="toggleitem"))
 
     if 'log' == ctx.triggered_id:
         fig.update_yaxes(type="log")
