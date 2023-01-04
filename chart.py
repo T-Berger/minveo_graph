@@ -31,6 +31,12 @@ standardise_benchmark(df_stox['Adjusted_close'])
 standardise_benchmark(df_teplx['Adjusted_close'])
 
 
+def convert(df_input, columns):
+
+    for column in columns:
+        df_input[column] = pd.to_numeric(df[column].str.replace(',', '.').str.replace('€', ''))
+
+
 def get_csv_data():
     df_csv = pd.read_csv("Macromedia_example.csv", sep=';', parse_dates=['Date'], date_parser=dateparse)
     df_csv = df_csv.loc[(df_csv["Date"] >= first_day) & (df_csv["Date"] <= today)]
@@ -38,16 +44,15 @@ def get_csv_data():
 
 
 df = get_csv_data()
+df_columns = ['Cash', 'Defensiv', 'Offensiv', 'Ausgewogen']
+convert(df, df_columns)
 
 df['LU0323577840.EUFUND'] = df_lu['Adjusted_close']
 df['GDAXI.INDX'] = df_dax['Adjusted_close']
 df['STOXX50E.INDX'] = df_stox['Adjusted_close']
 df['TEPLX.US'] = df_teplx['Adjusted_close']
 
-df['Cash'] = pd.to_numeric(df['Cash'].str.replace(',', '.').str.replace('€', ''))
-df['Defensiv'] = pd.to_numeric(df['Defensiv'].str.replace(',', '.').str.replace('€', ''))
-df['Offensiv'] = pd.to_numeric(df['Offensiv'].str.replace(',', '.').str.replace('€', ''))
-df['Ausgewogen'] = pd.to_numeric(df['Ausgewogen'].str.replace(',', '.').str.replace('€', ''))
+
 
 app = Dash(__name__)
 app.layout = html.Div([

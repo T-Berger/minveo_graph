@@ -20,3 +20,9 @@ Die Datei .env sollte nun erstellt sein und sich geöffnet haben. Nun den in Mir
 Um die benötigten Daten zu erhalten müssen wir ein package installieren:
 - $ pip install git+https://github.com/femtotrader/python-eodhistoricaldata.git
 
+oder
+
+- $ git clone https://github.com/femtotrader/python-eodhistoricaldata.git
+
+- $ python setup.py install
+
