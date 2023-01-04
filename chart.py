@@ -41,9 +41,13 @@ df['Offensiv'] = df['Offensiv'].str.replace(',', '.')
 df['Offensiv'] = df['Offensiv'].str.replace('€', '')
 df['Offensiv'] = pd.to_numeric(df['Offensiv'])
 
-df['Ausgewogen'] = df['Ausgewogen'].str.replace(',', '.')
-df['Ausgewogen'] = df['Ausgewogen'].str.replace('€', '')
-df['Ausgewogen'] = pd.to_numeric(df['Ausgewogen'])
+def get_csv_data():
+    df_csv = pd.read_csv("Macromedia_example.csv", sep=';', parse_dates=['Date'], date_parser=dateparse)
+    df_csv = df_csv.loc[(df_csv["Date"] >= first_day) & (df_csv["Date"] <= today)]
+    return df_csv
+
+
+df = get_csv_data()
 
 df['LU0323577840.EUFUND'] = df_lu['Adjusted_close']
 df['GDAXI.INDX'] = df_dax['Adjusted_close']
