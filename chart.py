@@ -1,3 +1,4 @@
+import math
 from datetime import datetime
 import pandas as pd
 import plotly.express as px
@@ -57,47 +58,30 @@ app.layout = html.Div([
 
     dcc.Graph(id='mygraph'),
 
-    html.Label('Slider'),
-    dcc.Slider(min=df['Date'].min().year,
-               max=df['Date'].max().year,
-               step=1,
-               value=1350,
-               tooltip={"placement": "bottom", "always_visible": True},
-               updatemode='drag',
-               persistence=True,
-               persistence_type='session',
-               id="my-slider"
-               ),
-],
-    style={'margin': 30}
-)
+    dcc.Graph(id='mygraph')
+])
 
 
 @app.callback(
     Output('mygraph', 'figure'),
-    Input('my-slider', 'value'),
     Input('log', 'n_clicks'),
     Input('lin', 'n_clicks')
 )
 def update_graph(slider_value, btn_log, btn_lin):
     fig = px.line(df, x='Date', y=df.columns, hover_data={'Date': '|%d/%m/%y'})
 
-    fig.update_xaxes(ticks="outside", ticklabelmode="period",
-                     rangeslider_visible=True,
-                     rangeselector=dict(
-                         buttons=list([
-                             dict(count=1, label="1m", step="month", stepmode="backward"),
-                             dict(count=6, label="6m", step="month", stepmode="backward"),
-                             dict(count=1, label="YTD", step="year", stepmode="todate"),
-                             dict(count=1, label="1y", step="year", stepmode="backward"),
-                             dict(step="all")
-                         ])))
+    fig = px.line(df, x='Date',
+                  y=df.columns
+                  , hover_data={'Date': '|%d/%m/%y'})
+
+    fig.update_xaxes(ticks="outside", rangeslider_visible=True, )
+    fig.update_layout(showlegend=True, )
 
     if 'log' == ctx.triggered_id:
         fig.update_yaxes(type="log")
 
     elif 'lin' == ctx.triggered_id:
-        return fig
+        fig.update_yaxes(type="linear")
 
     return fig
 
