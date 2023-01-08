@@ -1,7 +1,7 @@
-from datetime import datetime
+import math
 import pandas as pd
-import plotly.express as px
-from dash import Dash, dcc, html, Input, Output, ctx
+import plotly.graph_objects as go
+from datetime import datetime
 from decouple import config
 from python_eodhistoricaldata.eod_historical_data import get_eod_data
 from dash import Dash, dcc, html, Input, Output, ctx
@@ -30,20 +30,22 @@ def standardize_data(df_lu, df_dax, df_stox, df_teplx):
     standardise_benchmark(df_stox['Adjusted_close'])
     standardise_benchmark(df_teplx['Adjusted_close'])
 
-df = pd.read_csv("Macromedia_example.csv", sep=';', parse_dates=['Date'], date_parser=dateparse)
-df = df.loc[(df["Date"] >= "30/06/17") & (df["Date"] <= "30/09/22")]
+def get_csv_data():
+    def dateparse(date_string):
+        return datetime.strptime(date_string, '%d.%m.%y').date()
 
-df_columns = ['Cash', 'Defensiv', 'Offensiv', 'Ausgewogen']
+    df_csv = pd.read_csv("Macromedia_example.csv", sep=';', parse_dates=['Date'], date_parser=dateparse)
+    df_csv = df_csv.loc[(df_csv["Date"] >= FIRST_DAY) & (df_csv["Date"] <= TODAY)]
+    df_csv_columns = ['Cash', 'Defensiv', 'Offensiv', 'Ausgewogen']
 
-def convert(df, columns):
+    for column in df_csv_columns:
+        df_csv[column] = pd.to_numeric(df_csv[column].str.replace(',', '.').str.replace('€', ''))
+    return df_csv
 
-    for column in columns:
-        df[column] = df[column].str.replace(',','.')
-        df[column] = df[column].str.replace('€','')
-        df[column] = pd.to_numeric(df[column])
-        #print(column)
+df_lu, df_dax, df_stox, df_teplx = fetch_stock_data()
+standardize_data(df_lu, df_dax, df_stox, df_teplx)
 
-convert(df, df_columns)
+df = get_csv_data()
 
 df['LU0323577840.EUFUND'] = df_lu['Adjusted_close']
 df['GDAXI.INDX'] = df_dax['Adjusted_close']
@@ -54,55 +56,59 @@ app = Dash(__name__)
 
 app.layout = html.Div([
     html.H1('Stock price analysis', style={'textAlign': 'center'}),
-
-    html.Button('Logarithmisch', id='log', n_clicks=0),
-    html.Button('Linear', id='lin', n_clicks=0),
-
-    dcc.Graph(id='mygraph'),
-
-    html.Label('Slider'),
-    dcc.Slider(min=df['Date'].min().year,
-               max=df['Date'].max().year,
-               step=1,
-               value=1350,
-               tooltip={"placement": "bottom", "always_visible": True},
-               updatemode='drag',
-               persistence=True,
-               persistence_type='session',
-               id="my-slider"
-               ),
-],
-    style={'margin': 30}
-)
-
+    html.Div(children=[
+        html.Button('Logarithmisch', id='lin/log', n_clicks=0),
+    ]
+    ),
+    html.Div([
+        html.Label('Einmalige Zahlung'),
+        dcc.Input(id='einmalig', type='number', value=100, min=1),
+    ]),
+    html.Div(children=[
+        html.Label('Inflation'),
+        html.Br(),
+        html.Button('On', id='infl_on', n_clicks=0),
+        html.Button('Off', id='infl_off', n_clicks=0),
+    ]),
+    
+    dcc.Graph(id='mygraph')
+])
 
 @app.callback(
     Output('lin/log', 'children'),
     Output('mygraph', 'figure'),
-    Input('my-slider', 'value'),
-    Input('log', 'n_clicks'),
-    Input('lin', 'n_clicks')
+    Input('lin/log', 'n_clicks'),
+    Input('einmalig', 'value'),
+    Input('infl_on', 'n_clicks'),
+    Input('infl_off', 'n_clicks')
 )
-def update_graph(slider_value, btn_log, btn_lin):
-    fig = px.line(df, x='Date', y=df.columns, hover_data={'Date': '|%d/%m/%y'})
+def update_output(n_clicks_log, einmalig, n_clicks_on, n_clicks_off):
 
-    fig.update_layout(xaxis=dict(ticks="outside",
-                    ticklabelmode="period",
-                    rangeselector=dict(
-                        buttons=list([
-                            dict(count=1, label="1m", step="month", stepmode="backward"),
-                            dict(count=6, label="6m", step="month", stepmode="backward"),
-                            dict(count=1, label="YTD", step="year", stepmode="todate"),
-                            dict(count=1, label="1y", step="year", stepmode="backward"),
-                            dict(step="all")])),
-                            rangeslider=dict(visible=True)))
+    df_lu, df_dax, df_stox, df_teplx = fetch_stock_data()
+    standardize_data(df_lu, df_dax, df_stox, df_teplx)
+    df = get_csv_data()
+    df['LU0323577840.EUFUND'] = df_lu['Adjusted_close'] * (einmalig / df_lu.iloc[0]['Adjusted_close'])
+    df['GDAXI.INDX'] = df_dax['Adjusted_close'] * (einmalig / df_dax.iloc[0]['Adjusted_close'])
+    df['STOXX50E.INDX'] = df_stox['Adjusted_close'] * (einmalig / df_stox.iloc[0]['Adjusted_close'])
+    df['TEPLX.US'] = df_teplx['Adjusted_close'] * (einmalig / df_teplx.iloc[0]['Adjusted_close'])
 
+    traces = []
+    for column in df.columns[1:]:
+        traces.append(go.Scatter(x=df['Date'], y=df[column], name=column))
 
-    if 'log' == ctx.triggered_id:
-        fig.update_yaxes(type="log")
+    if n_clicks_log % 2 == 0:
+        lin_log_text = 'Logarithmisch'
+    else:
+        lin_log_text = 'Linear'
 
-    elif 'lin' == ctx.triggered_id:
-        return fig
+    fig = go.Figure()
+    
+    for column in ['Cash', 'Defensiv', 'Ausgewogen', 'Offensiv']:
+        fig.add_trace(go.Scatter(
+            x=df['Date'], y=df[column],
+            legendgroup="strategie_group", legendgrouptitle_text="Minveo Strategie",
+            name=column, mode="lines",
+        ))
 
     for column in ['LU0323577840.EUFUND', 'GDAXI.INDX', 'STOXX50E.INDX', 'TEPLX.US']:
         fig.add_trace(go.Scatter(
