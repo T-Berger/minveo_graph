@@ -82,15 +82,15 @@ app.layout = html.Div([
     Input('infl_on', 'n_clicks'),
     Input('infl_off', 'n_clicks')
 )
-def update_output(n_clicks_log, payment, n_clicks_on, n_clicks_off):
+def update_output(n_clicks_log, einmalig, n_clicks_on, n_clicks_off):
 
     df_lu, df_dax, df_stox, df_teplx = fetch_stock_data()
     standardize_data(df_lu, df_dax, df_stox, df_teplx)
     df = get_csv_data()
-    df['LU0323577840.EUFUND'] = df_lu['Adjusted_close'] * (payment / df_lu.iloc[0]['Adjusted_close'])
-    df['GDAXI.INDX'] = df_dax['Adjusted_close'] * (payment / df_dax.iloc[0]['Adjusted_close'])
-    df['STOXX50E.INDX'] = df_stox['Adjusted_close'] * (payment / df_stox.iloc[0]['Adjusted_close'])
-    df['TEPLX.US'] = df_teplx['Adjusted_close'] * (payment / df_teplx.iloc[0]['Adjusted_close'])
+    df['LU0323577840.EUFUND'] = df_lu['Adjusted_close'] * (einmalig / df_lu.iloc[0]['Adjusted_close'])
+    df['GDAXI.INDX'] = df_dax['Adjusted_close'] * (einmalig / df_dax.iloc[0]['Adjusted_close'])
+    df['STOXX50E.INDX'] = df_stox['Adjusted_close'] * (einmalig / df_stox.iloc[0]['Adjusted_close'])
+    df['TEPLX.US'] = df_teplx['Adjusted_close'] * (einmalig / df_teplx.iloc[0]['Adjusted_close'])
 
     traces = []
     for column in df.columns[1:]:
