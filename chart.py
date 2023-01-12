@@ -110,18 +110,18 @@ def update_output(n_clicks_log, einmalig, n_clicks_on, n_clicks_off):
 
     fig = go.Figure()
 
-    fig.add_trace(go.Scatter(
-        x=df['Date'], y=df['Offensiv'],
-        legendgroup="strategie_group", legendgrouptitle_text="Minveo Strategie",
-        name='Offensiv', mode="lines",
-    ))
-
     for column in ['Defensiv', 'Ausgewogen']:
         fig.add_trace(go.Scatter(
             x=df['Date'], y=df[column],
             legendgroup="strategie_group", legendgrouptitle_text="Minveo Strategie",
             name=column, mode="lines", visible='legendonly'
         ))
+
+    fig.add_trace(go.Scatter(
+        x=df['Date'], y=df['Offensiv'],
+        legendgroup="strategie_group", legendgrouptitle_text="Minveo Strategie",
+        name='Offensiv', mode="lines",
+    ))
 
     fig.add_trace(go.Scatter(
         x=df['Date'], y=df['Cash'],
@@ -142,8 +142,8 @@ def update_output(n_clicks_log, einmalig, n_clicks_on, n_clicks_off):
         y=-0.6,
         xanchor="left",
         x=0),
-                      xaxis=dict(rangeslider=dict(visible=True)))
-    fig.update_layout()
+                                    xaxis=dict(rangeslider=dict(visible=True)))
+    fig.update_xaxes(rangeslider_thickness=0.1)
 
     return lin_log_text, fig
 
