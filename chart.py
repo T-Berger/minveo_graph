@@ -20,17 +20,20 @@ def fetch_stock_data(first_day, today, api_key):
     return df_lu, df_dax, df_stox, df_teplx
 
 
-def standardize_data(df_lu, df_dax, df_stox, df_teplx):
-    def standardise_benchmark(row):
-        first_entry = row[0]
+df_lu, df_dax, df_stox, df_teplx = fetch_stock_data()
 
-        for i, value in enumerate(row):
-            row[i] = pd.to_numeric(math.ceil(value / (first_entry / 100) * 100) / 100)
 
-    standardise_benchmark(df_lu['Adjusted_close'])
-    standardise_benchmark(df_dax['Adjusted_close'])
-    standardise_benchmark(df_stox['Adjusted_close'])
-    standardise_benchmark(df_teplx['Adjusted_close'])
+def standardise_benchmark(row):
+    first_entry = row[0]
+
+    for i, value in enumerate(row):
+        row[i] = pd.to_numeric(math.ceil(value / (first_entry / 100) * 100) / 100)
+
+
+standardise_benchmark(df_lu['Adjusted_close'])
+standardise_benchmark(df_dax['Adjusted_close'])
+standardise_benchmark(df_stox['Adjusted_close'])
+standardise_benchmark(df_teplx['Adjusted_close'])
 
 
 def get_csv_data(first_day, today):
@@ -46,9 +49,6 @@ def get_csv_data(first_day, today):
     return df_csv
 
 
-df_lu, df_dax, df_stox, df_teplx = fetch_stock_data(FIRST_DAY, TODAY, API_KEY)
-standardize_data(df_lu, df_dax, df_stox, df_teplx)
-
 df = get_csv_data(FIRST_DAY, TODAY)
 
 df['LU0323577840.EUFUND'] = df_lu['Adjusted_close']
@@ -62,10 +62,10 @@ app.layout = html.Div([
     html.H1('Stock price analysis', style={'textAlign': 'center'}),
     html.Div(children=[
         html.Button('Logarithmisch', id='lin/log', n_clicks=0),
-    ]
-    ),
+    ]),
+
     html.Div([
-        html.Label('Einmalige Zahlung'),
+        html.Label('Einmalige Zahlung: '),
         dcc.Input(id='einmalig', type='number', value=100, min=1),
     ]),
     html.Div(children=[
@@ -93,6 +93,11 @@ def update_output(n_clicks_log, einmalig, n_clicks_on, n_clicks_off):
     df['GDAXI.INDX'] = df_dax['Adjusted_close'] * (einmalig / df_dax.iloc[0]['Adjusted_close'])
     df['STOXX50E.INDX'] = df_stox['Adjusted_close'] * (einmalig / df_stox.iloc[0]['Adjusted_close'])
     df['TEPLX.US'] = df_teplx['Adjusted_close'] * (einmalig / df_teplx.iloc[0]['Adjusted_close'])
+
+    df['Ausgewogen'] = df['Ausgewogen'] * (einmalig / df.iloc[0]['Ausgewogen'])
+    df['Defensiv'] = df['Defensiv'] * (einmalig / df.iloc[0]['Defensiv'])
+    df['Offensiv'] = df['Offensiv'] * (einmalig / df.iloc[0]['Offensiv'])
+    df['Cash'] = df['Cash'] * (einmalig / df.iloc[0]['Cash'])
 
     traces = []
     for column in df.columns[1:]:
