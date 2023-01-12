@@ -90,6 +90,8 @@ def update_output(n_clicks_log, einmalig, n_clicks_on, n_clicks_off):
     df['STOXX50E.INDX'] = df_stox['Adjusted_close'] * (einmalig / df_stox.iloc[0]['Adjusted_close'])
     df['TEPLX.US'] = df_teplx['Adjusted_close'] * (einmalig / df_teplx.iloc[0]['Adjusted_close'])
 
+
+
     traces = []
     for column in df.columns[1:]:
         traces.append(go.Scatter(x=df['Date'], y=df[column], name=column))
@@ -117,7 +119,8 @@ def update_output(n_clicks_log, einmalig, n_clicks_on, n_clicks_off):
 
 
     fig.update_layout(yaxis_type='log' if n_clicks_log % 2 == 1 else 'linear')
-    fig.update_layout(showlegend=True, legend=dict(groupclick="toggleitem"))
+    fig.update_layout(showlegend=True, legend=dict(groupclick="toggleitem"),
+                    xaxis=dict(rangeslider=dict(visible=True)))
     return lin_log_text, fig
 
 if __name__ == '__main__':
