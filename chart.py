@@ -110,14 +110,14 @@ def update_output(n_clicks_log, einmalig, n_clicks_on, n_clicks_off):
 
     fig = go.Figure()
 
-    for column in ['Cash', 'Defensiv', 'Ausgewogen', 'Offensiv']:
+    for column in ['Defensiv', 'Ausgewogen', 'Offensiv']:
         fig.add_trace(go.Scatter(
             x=df['Date'], y=df[column],
             legendgroup="strategie_group", legendgrouptitle_text="Minveo Strategie",
             name=column, mode="lines",
         ))
 
-    for column in ['LU0323577840.EUFUND', 'GDAXI.INDX', 'STOXX50E.INDX', 'TEPLX.US']:
+    for column in ['Cash', 'LU0323577840.EUFUND', 'GDAXI.INDX', 'STOXX50E.INDX', 'TEPLX.US']:
         fig.add_trace(go.Scatter(
             x=df['Date'], y=df[column],
             legendgroup="benchmark_group", legendgrouptitle_text="Benchmark",
@@ -126,7 +126,7 @@ def update_output(n_clicks_log, einmalig, n_clicks_on, n_clicks_off):
 
     fig.update_layout(yaxis_type='log' if n_clicks_log % 2 == 1 else 'linear', height=700)
     fig.update_layout(showlegend=True, legend=dict(
-        groupclick="toggleitem", orientation="h", yanchor="bottom",
+        groupclick="toggleitem", orientation="h", yanchor="top",
         y=-0.6,
         xanchor="left",
         x=0),
