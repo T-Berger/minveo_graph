@@ -20,7 +20,7 @@ def fetch_stock_data(first_day, today, api_key):
     return df_lu, df_dax, df_stox, df_teplx
 
 
-df_lu, df_dax, df_stox, df_teplx = fetch_stock_data()
+df_lu, df_dax, df_stox, df_teplx = fetch_stock_data(FIRST_DAY, TODAY, API_KEY)
 
 
 def standardise_benchmark(row):
