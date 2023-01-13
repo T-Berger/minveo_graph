@@ -77,6 +77,7 @@ app.layout = html.Div([
 
     dcc.Graph(id='mygraph',
               config={'displayModeBar': False})
+
 ])
 
 
@@ -89,17 +90,18 @@ app.layout = html.Div([
     Input('infl_off', 'n_clicks')
 )
 def update_output(n_clicks_log, einmalig, n_clicks_on, n_clicks_off):
+
+    df_csv_columns = ['Cash', 'Defensiv', 'Offensiv', 'Ausgewogen']
+
     df = get_csv_data(FIRST_DAY, TODAY)
     df['LU0323577840.EUFUND'] = df_lu['Adjusted_close'] * (einmalig / df_lu.iloc[0]['Adjusted_close'])
     df['GDAXI.INDX'] = df_dax['Adjusted_close'] * (einmalig / df_dax.iloc[0]['Adjusted_close'])
     df['STOXX50E.INDX'] = df_stox['Adjusted_close'] * (einmalig / df_stox.iloc[0]['Adjusted_close'])
     df['TEPLX.US'] = df_teplx['Adjusted_close'] * (einmalig / df_teplx.iloc[0]['Adjusted_close'])
 
-    df['Ausgewogen'] = df['Ausgewogen'] * (einmalig / df.iloc[0]['Ausgewogen'])
-    df['Defensiv'] = df['Defensiv'] * (einmalig / df.iloc[0]['Defensiv'])
-    df['Offensiv'] = df['Offensiv'] * (einmalig / df.iloc[0]['Offensiv'])
-    df['Cash'] = df['Cash'] * (einmalig / df.iloc[0]['Cash'])
-
+    for column in df_csv_columns:
+        df[column] = df[column] * (einmalig / df.iloc[0][column])
+    
     traces = []
     for column in df.columns[1:]:
         traces.append(go.Scatter(x=df['Date'], y=df[column], name=column))
