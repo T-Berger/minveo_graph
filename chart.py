@@ -9,18 +9,19 @@ from dash import Dash, dcc, html, Input, Output, ctx
 API_KEY = config('API_KEY')
 FIRST_DAY = "30/06/17"
 TODAY = datetime.today().strftime('%Y/%m/%d')
+BENCHMARKS = [("LU0323577840", "EUFUND"), ("GDAXI", "INDX"), ("STOXX50E", "INDX"), ("TEPLX", "US")]
 
 
-def fetch_stock_data(first_day, today, api_key):
-    df_lu = get_eod_data("LU0323577840", "EUFUND", first_day, today, api_key=api_key).reset_index()
-    df_dax = get_eod_data("GDAXI", "INDX", first_day, today, api_key=api_key).reset_index()
-    df_stox = get_eod_data("STOXX50E", "INDX", first_day, today, api_key=api_key).reset_index()
-    df_teplx = get_eod_data("TEPLX", "US", first_day, today, api_key=api_key).reset_index()
+def fetch_stock_data(first_day, today, api_key, benchmark_string_pairs):
+    df_temp = pd.DataFrame()
+    for string_pair in benchmark_string_pairs:
+        df_bench = get_eod_data(string_pair[0], string_pair[1], first_day, today, api_key=api_key).reset_index()
+        standardise_benchmark(df_bench['Adjusted_close'])
 
-    return df_lu, df_dax, df_stox, df_teplx
+        df_temp['Date'] = df_bench['Date']
+        df_temp['{}.{}'.format(string_pair[0], string_pair[1])] = df_bench['Adjusted_close']
 
-
-df_lu, df_dax, df_stox, df_teplx = fetch_stock_data(FIRST_DAY, TODAY, API_KEY)
+    return df_temp
 
 
 def standardise_benchmark(row):
@@ -30,31 +31,23 @@ def standardise_benchmark(row):
         row[i] = pd.to_numeric(math.ceil(value / (first_entry / 100) * 100) / 100)
 
 
-standardise_benchmark(df_lu['Adjusted_close'])
-standardise_benchmark(df_dax['Adjusted_close'])
-standardise_benchmark(df_stox['Adjusted_close'])
-standardise_benchmark(df_teplx['Adjusted_close'])
+def dateparse(date_string):
+    return datetime.strptime(date_string, '%d.%m.%y').date()
 
 
 def get_csv_data(first_day, today):
-    def dateparse(date_string):
-        return datetime.strptime(date_string, '%d.%m.%y').date()
-
-    df_csv = pd.read_csv("Macromedia_example.csv", sep=';', parse_dates=['Date'], date_parser=dateparse)
-    df_csv = df_csv.loc[(df_csv["Date"] >= first_day) & (df_csv["Date"] <= today)]
+    df_temp = pd.read_csv("Macromedia_example.csv", sep=';', parse_dates=['Date'], date_parser=dateparse)
+    df_temp = df_temp.loc[(df_temp["Date"] >= first_day) & (df_temp["Date"] <= today)]
     df_csv_columns = ['Cash', 'Defensiv', 'Offensiv', 'Ausgewogen']
 
     for column in df_csv_columns:
-        df_csv[column] = pd.to_numeric(df_csv[column].str.replace(',', '.').str.replace('€', ''))
-    return df_csv
+        df_temp[column] = pd.to_numeric(df_temp[column].str.replace(',', '.').str.replace('€', ''))
+    return df_temp
 
 
-df = get_csv_data(FIRST_DAY, TODAY)
-
-df['LU0323577840.EUFUND'] = df_lu['Adjusted_close']
-df['GDAXI.INDX'] = df_dax['Adjusted_close']
-df['STOXX50E.INDX'] = df_stox['Adjusted_close']
-df['TEPLX.US'] = df_teplx['Adjusted_close']
+df_csv = get_csv_data(FIRST_DAY, TODAY)
+df_stock = fetch_stock_data(FIRST_DAY, TODAY, API_KEY, BENCHMARKS)
+df = pd.merge(df_csv, df_stock, on='Date')
 
 app = Dash(__name__)
 
@@ -89,16 +82,8 @@ app.layout = html.Div([
     Input('infl_off', 'n_clicks')
 )
 def update_output(n_clicks_log, einmalig, n_clicks_on, n_clicks_off):
-    df = get_csv_data(FIRST_DAY, TODAY)
-    df['LU0323577840.EUFUND'] = df_lu['Adjusted_close'] * (einmalig / df_lu.iloc[0]['Adjusted_close'])
-    df['GDAXI.INDX'] = df_dax['Adjusted_close'] * (einmalig / df_dax.iloc[0]['Adjusted_close'])
-    df['STOXX50E.INDX'] = df_stox['Adjusted_close'] * (einmalig / df_stox.iloc[0]['Adjusted_close'])
-    df['TEPLX.US'] = df_teplx['Adjusted_close'] * (einmalig / df_teplx.iloc[0]['Adjusted_close'])
-
-    df['Ausgewogen'] = df['Ausgewogen'] * (einmalig / df.iloc[0]['Ausgewogen'])
-    df['Defensiv'] = df['Defensiv'] * (einmalig / df.iloc[0]['Defensiv'])
-    df['Offensiv'] = df['Offensiv'] * (einmalig / df.iloc[0]['Offensiv'])
-    df['Cash'] = df['Cash'] * (einmalig / df.iloc[0]['Cash'])
+    for column in df.loc[:, df.columns != 'Date']:
+        df[column] = df[column] * (einmalig / df.iloc[0][column])
 
     traces = []
     for column in df.columns[1:]:
@@ -143,7 +128,7 @@ def update_output(n_clicks_log, einmalig, n_clicks_on, n_clicks_off):
         y=-0.6,
         xanchor="left",
         x=0),
-                                    xaxis=dict(rangeslider=dict(visible=True)))
+                      xaxis=dict(rangeslider=dict(visible=True)))
     fig.update_xaxes(rangeslider_thickness=0.1)
 
     return lin_log_text, fig
