@@ -68,8 +68,7 @@ app.layout = html.Div([
         html.Button('Off', id='infl_off', n_clicks=0),
     ]),
 
-    dcc.Graph(id='mygraph',
-              config={'displayModeBar': False})
+    dcc.Graph(id='mygraph')
 ])
 
 
