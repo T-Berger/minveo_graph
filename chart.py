@@ -1,6 +1,7 @@
 import math
 import pandas as pd
 import plotly.graph_objects as go
+import itertools
 from datetime import datetime
 from decouple import config
 from python_eodhistoricaldata.eod_historical_data import get_eod_data
@@ -53,9 +54,6 @@ app = Dash(__name__)
 
 app.layout = html.Div([
     html.H1('Stock price analysis', style={'textAlign': 'center'}),
-    html.Div(children=[
-        html.Button('Logarithmisch', id='lin/log', n_clicks=0),
-    ]),
 
     html.Div([
         html.Label('Einmalige Zahlung: '),
@@ -81,7 +79,7 @@ app.layout = html.Div([
             clearable=False,
             multi=True,
             style={
-                'width': '50%'}
+                'width': '55%'}
         ),
 
         html.Label('Benchmarks: '),
@@ -98,9 +96,14 @@ app.layout = html.Div([
             clearable=False,
             multi=True,
             style={
-                'width': '50%'}
+                'width': '55%'}
         )
     ]),
+
+    html.Div(children=[
+        html.Button('Logarithmisch', id='lin/log', n_clicks=0),
+    ]),
+
     dcc.Graph(id='myfig', config={
         'displayModeBar': False}),
 
@@ -125,14 +128,7 @@ def update_output(n_clicks_log, einmalig, n_clicks_on, n_clicks_off, minveo_valu
         df[column] = df[column] * (einmalig / df.iloc[0][column])
 
     traces = []
-    for trace_name in minveo_value:
-        traces.append(go.Scatter(
-            x=df['Date'],
-            y=df[trace_name],
-            mode='lines',
-            name=trace_name
-        ))
-    for trace_name in benchmark_value:
+    for trace_name in itertools.chain(minveo_value, benchmark_value):
         traces.append(go.Scatter(
             x=df['Date'],
             y=df[trace_name],
@@ -146,32 +142,6 @@ def update_output(n_clicks_log, einmalig, n_clicks_on, n_clicks_off, minveo_valu
         lin_log_text = 'Linear'
 
     fig = go.Figure(data=traces)
-
-    '''for column in ['Defensiv', 'Ausgewogen']:
-        fig.add_trace(go.Scatter(
-            x=df['Date'], y=df[column],
-            legendgroup="strategie_group", legendgrouptitle_text="Minveo Strategie",
-            name=column, mode="lines", visible='legendonly'
-        ))
-
-    fig.add_trace(go.Scatter(
-        x=df['Date'], y=df['Offensiv'],
-        legendgroup="strategie_group", legendgrouptitle_text="Minveo Strategie",
-        name='Offensiv', mode="lines",
-    ))
-
-    fig.add_trace(go.Scatter(
-        x=df['Date'], y=df['Cash'],
-        legendgroup="benchmark_group", legendgrouptitle_text="Benchmark",
-        name='Cash', mode="lines"
-    ))
-
-    for column in ['LU0323577840.EUFUND', 'GDAXI.INDX', 'STOXX50E.INDX', 'TEPLX.US']:
-        fig.add_trace(go.Scatter(
-            x=df['Date'], y=df[column],
-            legendgroup="benchmark_group", legendgrouptitle_text="Benchmark",
-            name=column, mode="lines", visible='legendonly'
-        ))'''
 
     fig.update_layout(yaxis_type='log' if n_clicks_log % 2 == 1 else 'linear', height=700)
     fig.update_layout(showlegend=False, legend=dict(
