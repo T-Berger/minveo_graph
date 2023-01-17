@@ -68,34 +68,75 @@ app.layout = html.Div([
         html.Button('Off', id='infl_off', n_clicks=0),
     ]),
 
-    dcc.Graph(id='mygraph')
+    html.Div([
+        html.Label('Minveo Strategie: '),
+        dcc.Checklist(
+            id='minveo_strategies',
+            options=[
+                {'label': 'Defensiv', 'value': 'Defensiv'},
+                {'label': 'Ausgewogen', 'value': 'Ausgewogen'},
+                {'label': 'Offensiv', 'value': 'Offensiv'}
+            ],
+            value=['Offensiv']
+        ),
+
+        html.Label('Benchmarks: '),
+        dcc.Checklist(
+            id='benchmarks',
+            options=[
+                {'label': 'Cash', 'value': 'Cash'},
+                {'label': 'LU0323577840.EUFUND', 'value': 'LU0323577840.EUFUND'},
+                {'label': 'GDAXI.INDX', 'value': 'GDAXI.INDX'},
+                {'label': 'STOXX50E.INDX', 'value': 'STOXX50E.INDX'},
+                {'label': 'TEPLX.US', 'value': 'TEPLX.US'}
+            ],
+            value=['Cash']
+        )
+    ]),
+    dcc.Graph(id='myfig', config={
+        'displayModeBar': False}),
+
 ])
 
 
 @app.callback(
     Output('lin/log', 'children'),
-    Output('mygraph', 'figure'),
+    Output('myfig', 'figure'),
     Input('lin/log', 'n_clicks'),
     Input('einmalig', 'value'),
     Input('infl_on', 'n_clicks'),
-    Input('infl_off', 'n_clicks')
+    Input('infl_off', 'n_clicks'),
+    Input('minveo_strategies', 'value'),
+    Input('benchmarks', 'value')
 )
-def update_output(n_clicks_log, einmalig, n_clicks_on, n_clicks_off):
+def update_output(n_clicks_log, einmalig, n_clicks_on, n_clicks_off, minveo_value, benchmark_value):
     for column in df.loc[:, df.columns != 'Date']:
         df[column] = df[column] * (einmalig / df.iloc[0][column])
 
     traces = []
-    for column in df.columns[1:]:
-        traces.append(go.Scatter(x=df['Date'], y=df[column], name=column))
+    for trace_name in minveo_value:
+        traces.append(go.Scatter(
+            x=df['Date'],
+            y=df[trace_name],
+            mode='lines',
+            name=trace_name
+        ))
+    for trace_name in benchmark_value:
+        traces.append(go.Scatter(
+            x=df['Date'],
+            y=df[trace_name],
+            mode='lines',
+            name=trace_name
+        ))
 
     if n_clicks_log % 2 == 0:
         lin_log_text = 'Logarithmisch'
     else:
         lin_log_text = 'Linear'
 
-    fig = go.Figure()
+    fig = go.Figure(data=traces)
 
-    for column in ['Defensiv', 'Ausgewogen']:
+    '''for column in ['Defensiv', 'Ausgewogen']:
         fig.add_trace(go.Scatter(
             x=df['Date'], y=df[column],
             legendgroup="strategie_group", legendgrouptitle_text="Minveo Strategie",
@@ -119,10 +160,10 @@ def update_output(n_clicks_log, einmalig, n_clicks_on, n_clicks_off):
             x=df['Date'], y=df[column],
             legendgroup="benchmark_group", legendgrouptitle_text="Benchmark",
             name=column, mode="lines", visible='legendonly'
-        ))
+        ))'''
 
     fig.update_layout(yaxis_type='log' if n_clicks_log % 2 == 1 else 'linear', height=700)
-    fig.update_layout(showlegend=True, legend=dict(
+    fig.update_layout(showlegend=False, legend=dict(
         groupclick="toggleitem", orientation="h", yanchor="top",
         y=-0.6,
         xanchor="left",
@@ -130,7 +171,7 @@ def update_output(n_clicks_log, einmalig, n_clicks_on, n_clicks_off):
                       xaxis=dict(rangeslider=dict(visible=True)))
     fig.update_xaxes(rangeslider_thickness=0.1)
 
-    return lin_log_text, fig
+    return 'Linear' if n_clicks_log % 2 == 0 else 'Logarithmic', fig
 
 
 if __name__ == '__main__':
