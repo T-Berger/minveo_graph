@@ -98,7 +98,6 @@ app.layout = html.Div([
 
 ])
 
-
 @app.callback(
     Output('lin/log', 'children'),
     Output('myfig', 'figure'),
