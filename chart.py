@@ -109,6 +109,10 @@ app.layout = html.Div([
     Input('benchmarks', 'value')
 )
 def update_output(n_clicks_log, einmalig, n_clicks_on, n_clicks_off, minveo_value, benchmark_value):
+    
+    if einmalig is None or einmalig <= 0:
+        einmalig = 100
+
     for column in df.loc[:, df.columns != 'Date']:
         df[column] = df[column] * (einmalig / df.iloc[0][column])
 
