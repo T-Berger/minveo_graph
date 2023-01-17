@@ -182,7 +182,7 @@ def update_output(n_clicks_log, einmalig, n_clicks_on, n_clicks_off, minveo_valu
                       xaxis=dict(rangeslider=dict(visible=True)))
     fig.update_xaxes(rangeslider_thickness=0.1)
 
-    return 'Linear' if n_clicks_log % 2 == 0 else 'Logarithmic', fig
+    return lin_log_text, fig
 
 
 if __name__ == '__main__':
