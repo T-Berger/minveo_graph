@@ -70,18 +70,22 @@ app.layout = html.Div([
 
     html.Div([
         html.Label('Minveo Strategie: '),
-        dcc.Checklist(
+        dcc.Dropdown(
             id='minveo_strategies',
             options=[
                 {'label': 'Defensiv', 'value': 'Defensiv'},
                 {'label': 'Ausgewogen', 'value': 'Ausgewogen'},
                 {'label': 'Offensiv', 'value': 'Offensiv'}
             ],
-            value=['Offensiv']
+            value=['Offensiv'],
+            clearable=False,
+            multi=True,
+            style={
+                'width': '50%'}
         ),
 
         html.Label('Benchmarks: '),
-        dcc.Checklist(
+        dcc.Dropdown(
             id='benchmarks',
             options=[
                 {'label': 'Cash', 'value': 'Cash'},
@@ -90,7 +94,11 @@ app.layout = html.Div([
                 {'label': 'STOXX50E.INDX', 'value': 'STOXX50E.INDX'},
                 {'label': 'TEPLX.US', 'value': 'TEPLX.US'}
             ],
-            value=['Cash']
+            value=['Cash'],
+            clearable=False,
+            multi=True,
+            style={
+                'width': '50%'}
         )
     ]),
     dcc.Graph(id='myfig', config={
