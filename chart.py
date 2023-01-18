@@ -145,8 +145,8 @@ def update_output(n_clicks_log, einmalig, n_clicks_on, n_clicks_off, minveo_valu
     if einmalig is None or einmalig <= 0:
         einmalig = 100
 
-    for column in df.loc[:, df.columns != 'Date']:
-        df[column] = df[column] * (einmalig / df.iloc[0][column])
+    for column in df_filtered.loc[:, df_filtered.columns != 'Date']:
+        df_filtered[column] = df_filtered[column] * (einmalig / df_filtered.iloc[0][column])
 
     traces = []
     for trace_name in itertools.chain(minveo_value, benchmark_value):
