@@ -50,6 +50,8 @@ df_csv = get_csv_data(FIRST_DAY, TODAY)
 df_stock = fetch_stock_data(FIRST_DAY, TODAY, API_KEY, BENCHMARKS)
 df = pd.merge(df_csv, df_stock, on='Date')
 
+df['Date'] = df['Date'].apply(lambda x: x.timestamp())
+
 app = Dash(__name__)
 
 app.layout = html.Div([
@@ -100,12 +102,24 @@ app.layout = html.Div([
         )
     ]),
 
+    
+
     html.Div(children=[
         html.Button('Logarithmisch', id='lin/log', n_clicks=0),
     ]),
 
     dcc.Graph(id='myfig', config={
         'displayModeBar': False}),
+
+    html.Div(children=[
+        dcc.RangeSlider(id='rangeslider',
+                        min=min(df['Date']),
+                        max=max(df['Date']),
+                        value=[min(df['Date']), max(df['Date'])],
+                        step=1,
+                        marks={i: str(datetime.fromtimestamp(i)) for i in df['Date'][::30]}, # display the date in the marks
+                        updatemode='drag')
+    ]),
 
 ])
 
@@ -117,10 +131,17 @@ app.layout = html.Div([
     Input('infl_on', 'n_clicks'),
     Input('infl_off', 'n_clicks'),
     Input('minveo_strategies', 'value'),
-    Input('benchmarks', 'value')
+    Input('benchmarks', 'value'),
+    Input('rangeslider', 'value')
 )
-def update_output(n_clicks_log, einmalig, n_clicks_on, n_clicks_off, minveo_value, benchmark_value):
+def update_output(n_clicks_log, einmalig, n_clicks_on, n_clicks_off, minveo_value, benchmark_value, rangesl_value):
+    start_timestamp = rangesl_value[0]
+    end_timestamp = rangesl_value[1]
+
+    df_filtered = df[(df['Date'] >= start_timestamp) & (df['Date'] <= end_timestamp)]
     
+    df_filtered['Date'] = pd.to_datetime(df_filtered['Date'], unit='s')
+
     if einmalig is None or einmalig <= 0:
         einmalig = 100
 
@@ -130,8 +151,8 @@ def update_output(n_clicks_log, einmalig, n_clicks_on, n_clicks_off, minveo_valu
     traces = []
     for trace_name in itertools.chain(minveo_value, benchmark_value):
         traces.append(go.Scatter(
-            x=df['Date'],
-            y=df[trace_name],
+            x=df_filtered['Date'],
+            y=df_filtered[trace_name],
             mode='lines',
             name=trace_name
         ))
@@ -143,12 +164,10 @@ def update_output(n_clicks_log, einmalig, n_clicks_on, n_clicks_off, minveo_valu
 
     fig = go.Figure(data=traces)
 
+
     fig.update_layout(yaxis_type='log' if n_clicks_log % 2 == 1 else 'linear', height=700)
-    fig.update_layout(showlegend=False, legend=dict(
-        groupclick="toggleitem", orientation="h", yanchor="top",
-        y=-0.6,
-        xanchor="left",
-        x=0),
+    fig.update_layout(showlegend=True, legend=dict(
+        groupclick="toggleitem", orientation="h"),
                       xaxis=dict(rangeslider=dict(visible=True)))
     fig.update_xaxes(rangeslider_thickness=0.1)
 
