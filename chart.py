@@ -16,6 +16,10 @@ BENCHMARKS = [('LU0323577840', 'EUFUND'), ('GDAXI', 'INDX'), ('STOXX50E', 'INDX'
 
 
 def fetch_stock_data(first_day, today, api_key, benchmarks):
+    """Requesting historical stock data from the EOD Historical Data API.
+
+    These data is assembled in a dataframe and set as output.
+    """
     df_temp = pd.DataFrame()
     for string_pair in benchmarks:
         df_bench = get_eod_data(string_pair[0], string_pair[1], first_day, today, api_key=api_key).reset_index()
@@ -28,6 +32,10 @@ def fetch_stock_data(first_day, today, api_key, benchmarks):
 
 
 def normalise_benchmark(one_time_value, row):
+    """Iteration through a dataframe row to normalise the values to a specific value.
+
+    These values are shortened to two decimal places.
+    """
     first_entry = row[0]
 
     for i, value in enumerate(row):
@@ -35,10 +43,16 @@ def normalise_benchmark(one_time_value, row):
 
 
 def dateparse(date_string):
+    """Parsing a date string according to a specific format.
+    """
     return datetime.strptime(date_string, '%d.%m.%y').date()
 
 
 def get_csv_data(first_day, today):
+    """Retrieve data representing the Minveo strategy from a local CSV file from a specific period of time.
+
+    These data is formatted, assembled in a dataframe and set as output.
+    """
     df_temp = pd.read_csv('Macromedia_example.csv', sep=';', parse_dates=['Date'], date_parser=dateparse)
     df_temp = df_temp.loc[(df_temp['Date'] >= first_day) & (df_temp['Date'] <= today)]
     df_csv_columns = ['Cash', 'Defensiv', 'Offensiv', 'Ausgewogen']
@@ -159,17 +173,19 @@ def update_output(n_clicks_log, one_time, n_clicks_on, n_clicks_off, minveo_valu
             name=trace_name
         ))
 
-    if n_clicks_log % 2 == 0:
-        lin_log_text = 'Logarithmisch'
-    else:
-        lin_log_text = 'Linear'
-
     fig = go.Figure(data=traces)
 
-    fig.update_layout(yaxis_type='log' if n_clicks_log % 2 == 1 else 'linear', height=700)
-    fig.update_layout(showlegend=True, legend=dict(
-        groupclick="toggleitem", orientation="h"),
-                      xaxis=dict(rangeslider=dict(visible=True)))
+    if n_clicks_log % 2 == 0:
+        lin_log_text = 'Logarithmisch'
+        fig.update_layout(yaxis_type='log')
+    else:
+        lin_log_text = 'Linear'
+        fig.update_layout(yaxis_type='linear')
+
+    fig.update_layout(showlegend=True,
+                      legend=dict(groupclick="toggleitem", orientation="h"),
+                      xaxis=dict(rangeslider=dict(visible=True)),
+                      height=700)
     fig.update_xaxes(rangeslider_thickness=0.1)
 
     return lin_log_text, fig
