@@ -1,23 +1,25 @@
+import itertools
 import math
+from datetime import datetime
+
 import pandas as pd
 import plotly.graph_objects as go
-import itertools
-from datetime import datetime
+from dash import Dash, dcc, html, Input, Output
 from decouple import config
+
 from python_eodhistoricaldata.eod_historical_data import get_eod_data
-from dash import Dash, dcc, html, Input, Output, ctx
 
 API_KEY = config('API_KEY')
-FIRST_DAY = "30/06/17"
+FIRST_DAY = '30/06/17'
 TODAY = datetime.today().strftime('%Y/%m/%d')
-BENCHMARKS = [("LU0323577840", "EUFUND"), ("GDAXI", "INDX"), ("STOXX50E", "INDX"), ("TEPLX", "US")]
+BENCHMARKS = [('LU0323577840', 'EUFUND'), ('GDAXI', 'INDX'), ('STOXX50E', 'INDX'), ('TEPLX', 'US')]
 
 
-def fetch_stock_data(first_day, today, api_key, benchmark_string_pairs):
+def fetch_stock_data(first_day, today, api_key, benchmarks):
     df_temp = pd.DataFrame()
-    for string_pair in benchmark_string_pairs:
+    for string_pair in benchmarks:
         df_bench = get_eod_data(string_pair[0], string_pair[1], first_day, today, api_key=api_key).reset_index()
-        standardise_benchmark(df_bench['Adjusted_close'])
+        normalise_benchmark(100, df_bench['Adjusted_close'])
 
         df_temp['Date'] = df_bench['Date']
         df_temp['{}.{}'.format(string_pair[0], string_pair[1])] = df_bench['Adjusted_close']
@@ -25,7 +27,7 @@ def fetch_stock_data(first_day, today, api_key, benchmark_string_pairs):
     return df_temp
 
 
-def standardise_benchmark(row):
+def normalise_benchmark(one_time_value, row):
     first_entry = row[0]
 
     for i, value in enumerate(row):
@@ -37,8 +39,8 @@ def dateparse(date_string):
 
 
 def get_csv_data(first_day, today):
-    df_temp = pd.read_csv("Macromedia_example.csv", sep=';', parse_dates=['Date'], date_parser=dateparse)
-    df_temp = df_temp.loc[(df_temp["Date"] >= first_day) & (df_temp["Date"] <= today)]
+    df_temp = pd.read_csv('Macromedia_example.csv', sep=';', parse_dates=['Date'], date_parser=dateparse)
+    df_temp = df_temp.loc[(df_temp['Date'] >= first_day) & (df_temp['Date'] <= today)]
     df_csv_columns = ['Cash', 'Defensiv', 'Offensiv', 'Ausgewogen']
 
     for column in df_csv_columns:
@@ -55,21 +57,21 @@ df['Date'] = df['Date'].apply(lambda x: x.timestamp())
 app = Dash(__name__)
 
 app.layout = html.Div([
-    html.H1('Stock price analysis', style={'textAlign': 'center'}),
+    html.H1('Historische Aktienkursanalyse und Vergleich mit Minveo Strategien', style={'textAlign': 'center'}),
 
     html.Div([
         html.Label('Einmalige Zahlung: '),
-        dcc.Input(id='einmalig', type='number', value=100, min=1),
+        dcc.Input(id='one_time', type='number', value=100, min=1),
     ]),
     html.Div(children=[
         html.Label('Inflation'),
         html.Br(),
-        html.Button('On', id='infl_on', n_clicks=0),
-        html.Button('Off', id='infl_off', n_clicks=0),
+        html.Button('Ein', id='infl_on', n_clicks=0),
+        html.Button('Aus', id='infl_off', n_clicks=0),
     ]),
 
     html.Div([
-        html.Label('Minveo Strategie: '),
+        html.Label('Minveo Strategien: '),
         dcc.Dropdown(
             id='minveo_strategies',
             options=[
@@ -102,13 +104,11 @@ app.layout = html.Div([
         )
     ]),
 
-    
-
     html.Div(children=[
         html.Button('Logarithmisch', id='lin/log', n_clicks=0),
     ]),
 
-    dcc.Graph(id='myfig', config={
+    dcc.Graph(id='my_fig', config={
         'displayModeBar': False}),
 
     html.Div(children=[
@@ -117,36 +117,38 @@ app.layout = html.Div([
                         max=max(df['Date']),
                         value=[min(df['Date']), max(df['Date'])],
                         step=1,
-                        marks={i: str(datetime.fromtimestamp(i)) for i in df['Date'][::30]}, # display the date in the marks
+                        marks={i: str(datetime.fromtimestamp(i)) for i in df['Date'][::30]},
+                        # display the date in the marks
                         updatemode='drag')
     ]),
 
 ])
 
+
 @app.callback(
     Output('lin/log', 'children'),
-    Output('myfig', 'figure'),
+    Output('my_fig', 'figure'),
     Input('lin/log', 'n_clicks'),
-    Input('einmalig', 'value'),
+    Input('one_time', 'value'),
     Input('infl_on', 'n_clicks'),
     Input('infl_off', 'n_clicks'),
     Input('minveo_strategies', 'value'),
     Input('benchmarks', 'value'),
     Input('rangeslider', 'value')
 )
-def update_output(n_clicks_log, einmalig, n_clicks_on, n_clicks_off, minveo_value, benchmark_value, rangesl_value):
+def update_output(n_clicks_log, one_time, n_clicks_on, n_clicks_off, minveo_value, benchmark_value, rangesl_value):
     start_timestamp = rangesl_value[0]
     end_timestamp = rangesl_value[1]
 
     df_filtered = df[(df['Date'] >= start_timestamp) & (df['Date'] <= end_timestamp)]
-    
+
     df_filtered['Date'] = pd.to_datetime(df_filtered['Date'], unit='s')
 
-    if einmalig is None or einmalig <= 0:
-        einmalig = 100
+    if one_time is None or one_time <= 0:
+        one_time = 100
 
     for column in df_filtered.loc[:, df_filtered.columns != 'Date']:
-        df_filtered[column] = df_filtered[column] * (einmalig / df_filtered.iloc[0][column])
+        df_filtered[column] = df_filtered[column] * (one_time / df_filtered.iloc[0][column])
 
     traces = []
     for trace_name in itertools.chain(minveo_value, benchmark_value):
@@ -163,7 +165,6 @@ def update_output(n_clicks_log, einmalig, n_clicks_on, n_clicks_off, minveo_valu
         lin_log_text = 'Linear'
 
     fig = go.Figure(data=traces)
-
 
     fig.update_layout(yaxis_type='log' if n_clicks_log % 2 == 1 else 'linear', height=700)
     fig.update_layout(showlegend=True, legend=dict(
