@@ -31,7 +31,7 @@ def normalise_benchmark(one_time_value, row):
     first_entry = row[0]
 
     for i, value in enumerate(row):
-        row[i] = pd.to_numeric(math.ceil(value / (first_entry / 100) * 100) / 100)
+        row[i] = pd.to_numeric(math.ceil(value / (first_entry / one_time_value) * 100) / 100)
 
 
 def dateparse(date_string):
@@ -148,7 +148,7 @@ def update_output(n_clicks_log, one_time, n_clicks_on, n_clicks_off, minveo_valu
         one_time = 100
 
     for column in df_filtered.loc[:, df_filtered.columns != 'Date']:
-        df_filtered[column] = df_filtered[column] * (one_time / df_filtered.iloc[0][column])
+        normalise_benchmark(one_time, df[column])
 
     traces = []
     for trace_name in itertools.chain(minveo_value, benchmark_value):
