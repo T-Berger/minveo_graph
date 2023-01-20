@@ -162,7 +162,7 @@ def update_output(n_clicks_log, one_time, n_clicks_on, n_clicks_off, minveo_valu
         one_time = 100
 
     for column in df_filtered.loc[:, df_filtered.columns != 'Date']:
-        normalise_benchmark(one_time, df[column])
+        df_filtered [column] = df_filtered[column] * (one_time / df.iloc[0][column])
 
     traces = []
     for trace_name in itertools.chain(minveo_value, benchmark_value):
